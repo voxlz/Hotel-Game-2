@@ -88,7 +88,7 @@ namespace HotelGame
             update(this);
 
             string[] leftStrs = isTutorial() ? Dialog.guestLeftTut : Dialog.guestLeft;
-            print(leftStrs, "-1 guest, +" + roomStayingPrice + " $");
+            print(leftStrs, "-1 guest, +" + roomStayingPrice + " $, +1 dirty room");
         }
 
         internal void guestArrived()
@@ -114,7 +114,7 @@ namespace HotelGame
             update(this);
 
             string[] strs = isTutorial() ? Dialog.cleanRoomTut : Dialog.cleanRoom;
-            print(strs, "( -1 Dirty Room )");
+            print(strs, "( -1 dirty Room )");
 
             if (isTutorial())
             {

@@ -19,7 +19,7 @@
             "I hope you had a plesant stay."
         };
         public static readonly string[] guestLeftTut = {
-            "'My first income!' you think while you recive money from the leaving guest. They look at you guiltily before telling you the toilet is clogged." +
+            "You recive money from the leaving guest. Before leaving they tell you the toilet is clogged. " +
             " 'Right. I should clean that before my next guest arrives'."
         };
         public static readonly string[] guestArrived = {
@@ -28,7 +28,7 @@
             "Yes? How may I help you?"
         };
         public static readonly string[] guestArrivedTut = {
-           "Oh, there's your first guest! It seems like they will simply show up during daytime if you have free rooms. Now, let's wait untill they leaves."
+           "Oh, there's your first guest! It seems like they will simply show up during daytime if you have free rooms. Now, let's wait untill they leave."
         };
         public static readonly string[] cleanRoom = {
            "The room is now clean.",

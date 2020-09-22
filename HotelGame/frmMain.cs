@@ -14,13 +14,17 @@ namespace HotelGame
     public partial class frmMain : Form
     {
         #region variables
-        SoundPlayer soundGuestArriving;
-        SoundPlayer soundCash;
-        Hotel hotel;
-        DateTime lastDateTime = new DateTime(1999, 2, 26, 0, 0, 0);
         Random r = new Random();
+
+        //SoundPlayer soundGuestArriving;
+        //SoundPlayer soundCash;
+        Hotel hotel;
+
+        DateTime lastDateTime = new DateTime(1999, 2, 26, 0, 0, 0);
         static DateTime inGameTime = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day, 12, 0, 0);
 
+        List<string> dialogLog = new List<string>();
+        List<Label> dialogLabels;
         static List<Tuple<string, string>> outputQueue = new List<Tuple<string, string>>();
 
         string path = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName;
@@ -32,9 +36,6 @@ namespace HotelGame
         bool morning = false;
         bool evening = false;
 
-
-
-
         // Sounds
         static string soundPath;
 
@@ -45,6 +46,11 @@ namespace HotelGame
             InitializeComponent();
             hotel = new Hotel(Output, UpdateLabels);
             Start();
+            dialogLabels = new List<Label>(new Label[] { lblDialog1, lblDialog2, lblDialog3, lblDialog4, lblDialog5, lblDialog6, lblDialog7, lblDialog8 });
+            foreach (var lbl in dialogLabels)
+            {
+                lbl.Text = "";
+            }
         }
 
         #region My funktions
@@ -52,9 +58,9 @@ namespace HotelGame
         public void Start()
         {
             soundPath = path + @"\Sound Effects\Leaving Guest.wav";
-            soundGuestArriving = new SoundPlayer(soundPath);
+            //soundGuestArriving = new SoundPlayer(soundPath);
             soundPath = path + @"\Sound Effects\Cash.wav";
-            soundCash = new SoundPlayer(soundPath);
+            //soundCash = new SoundPlayer(soundPath);
 
             tbcHotel.TabPages.Remove(tabWork);
             tbcHotel.TabPages.Remove(tabResturant);
@@ -65,44 +71,40 @@ namespace HotelGame
             Thread messagePrinter = new Thread(() => {
                 while (true)
                 {
-                    string message;
+                    Tuple<string, string> messageTuple;
 
                     lock (outputQueue)
                     {
-                        while (outputQueue.Count == 0)
+                        while (outputQueue.Count <= 0)
                         {
                             Monitor.Wait(outputQueue);
                         }
-                        var messageTuple = outputQueue[0];
-                        message = messageTuple.Item1;
-                        var info = messageTuple.Item2;
-
-                        lblDialogInfo.Invoke(new Action(() => {
-                            string oldText = tbxInfo.Text;
-
-                            if (lblDialogText.Text.Length > 0)
-                            {
-                                tbxInfo.Text = lblDialogText.Text + "  " + lblDialogInfo.Text;
-                                if (oldText.Length > 0)
-                                    tbxInfo.AppendText("\n\n" + oldText);
-                            }
-
-                            if (info.Length > 0)
-                                lblDialogInfo.Text = "(" + info + ")";
-                            else
-                                lblDialogInfo.Text = "";
-
-                            lblDialogText.Text = "";
-                        }));
-
+                        messageTuple = outputQueue[0];
                         outputQueue.RemoveAt(0);
                     }
+                    var message = messageTuple.Item1;
+                    var info = messageTuple.Item2;
+                    dialogLog.Insert(0, message + (info.Length != 0 ? $" ({info})" : ""));
 
-                    Speak(message);
+                    lblDialog1.Invoke(new Action(() => {
+                        UpdateDialogLabels();
+                    }));
+                    //Console.WriteLine(outputQueue[0]);
+                  
+
+                    Speak(message, info);
                     idleCounter = 0;
                 }
             });
             messagePrinter.Start();
+        }
+
+        private void UpdateDialogLabels()
+        {
+            for (int i = 0; i < Math.Min(dialogLabels.Count, dialogLog.Count); i++)
+            {
+                dialogLabels[i].Text = dialogLog[i];
+            }
         }
 
         private void Output(string text, string info = "")
@@ -123,15 +125,19 @@ namespace HotelGame
             string text = textArray[r.Next(textArray.Length)];
             Output(text, extraInfo);
         }
-        private void Speak(string text)
+        private void Speak(string text, string info)
         {
             string soundPath = path + @"\Sound Effects\Text Scroll Beep.wav";
             SoundPlayer dialogbeep = new SoundPlayer(soundPath);
 
+            Invoke(new Action(() => {
+                lblDialog1.Text = "";
+            }));
+
             for (int i = 0; i < text.Length; i++)
             {
                 Invoke(new Action(() => {
-                    lblDialogText.Text += text[i];
+                    lblDialog1.Text += text[i];
                 }));
 
                 if (text[i] != ' ')
@@ -139,11 +145,18 @@ namespace HotelGame
                     dialogbeep.Play();
                 } else
                 {
-                    Thread.Sleep(15);
+                    Thread.Sleep(20);
                 }
                 Thread.Sleep(40);
+                lock (outputQueue)
+                {
+                    if (outputQueue.Count != 0) break;
+                }
             }
-            Thread.Sleep(500);
+            Invoke(new Action(() => {
+                lblDialog1.Text += $" ({info})";
+            }));
+            //Thread.Sleep(500);
         }
         private void NewRoom()
         {
@@ -152,11 +165,13 @@ namespace HotelGame
         private void UpdateLabels(Hotel h)
         {
             // Update LabelText
-            tbxHotelInfo.Text = "Hotel Name: " + Hotel.name + "\n\nMoney: " + h.money +
+            /*lbl.Text = "Hotel Name: " + Hotel.name + "\n\nMoney: " + h.money +
                 "$\nRoom staying fee: " + h.roomStayingPrice + "$\nTot. Guests: " +
                 h.guests.Count + "\nTot. Rooms: " + h.rooms + "\nDrty. Rooms: " +
                 h.roomsDirty + "\nAvbl. Rooms: " +
-                (h.rooms - h.roomsDirty - h.guests.Count);
+                (h.rooms - h.roomsDirty - h.guests.Count);*/
+            lblName.Text = Hotel.name;
+            lblRooms.Text = $"Rooms {h.rooms - h.roomsDirty - h.guests.Count}/{h.roomsDirty}/{h.guests.Count}";
 
             // Update ButtonText
             btnCleanRoom.Text = "Clean a Room: 10$ (" + h.roomsDirty + " Drty. Room/s left)";
@@ -502,6 +517,16 @@ namespace HotelGame
         }
 
         private void tbxHotelInfo_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblTime_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblName_Click(object sender, EventArgs e)
         {
 
         }
